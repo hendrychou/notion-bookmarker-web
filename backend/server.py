@@ -12,6 +12,19 @@ import functools
 # ── Config ──────────────────────────────────────────────
 HOST = "0.0.0.0"
 PORT = 8765
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "dist")
+MIME_TYPES = {
+    ".html": "text/html",
+    ".css": "text/css",
+    ".js": "application/javascript",
+    ".json": "application/json",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".woff2": "font/woff2",
+    ".webp": "image/webp",
+}
 
 # Load Notion API key
 env_path = os.path.expanduser("~/.hermes/.env")
@@ -159,6 +172,27 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
+    def _serve_static(self, path):
+        """Serve built frontend files."""
+        if path == "/":
+            path = "/index.html"
+        file_path = os.path.join(FRONTEND_DIR, path.lstrip("/"))
+        # SPA: if file doesn't exist, serve index.html
+        if not os.path.isfile(file_path):
+            file_path = os.path.join(FRONTEND_DIR, "index.html")
+        ext = os.path.splitext(file_path)[1]
+        ctype = MIME_TYPES.get(ext, "application/octet-stream")
+        try:
+            with open(file_path, "rb") as f:
+                data = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+        except Exception as e:
+            self._json({"error": str(e)}, 500)
+
     def do_OPTIONS(self):
         self._json({})
 
@@ -197,7 +231,7 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
                 self._json({"error": str(e)}, 500)
 
         else:
-            self._json({"error": "not found"}, 404)
+            self._serve_static(path)
 
     def log_message(self, format, *args):
         # Quiet server

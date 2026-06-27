@@ -1,6 +1,6 @@
 import type { Resource, Category } from "./types"
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://100.82.102.113:8765"
+const API_BASE = ""
 
 export async function fetchResources(): Promise<Resource[]> {
   const res = await fetch(`${API_BASE}/api/resources`)
