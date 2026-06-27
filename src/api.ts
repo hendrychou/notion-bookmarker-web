@@ -1,6 +1,10 @@
 import type { Resource, Category } from "./types"
 
-const API_BASE = ""
+// When served from VPS (same origin), API_BASE is empty.
+// When served from GitHub Pages (HTTPS), use tunnel URL.
+const API_BASE = window.location.hostname === "hendrychou.github.io"
+  ? "https://capability-announces-realtors-much.trycloudflare.com"
+  : ""
 
 export async function fetchResources(): Promise<Resource[]> {
   const res = await fetch(`${API_BASE}/api/resources`)
